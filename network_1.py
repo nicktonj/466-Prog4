@@ -142,6 +142,12 @@ class Router:
         self.cost_D = cost_D    # {neighbor: {interface: cost}}
         #TODO: set up the routing table for connected hosts
         self.rt_tbl_D = {}      # {destination: {router: cost}}
+        for neighbor in self.cost_D:
+            cost = self.cost_D[neighbor].get(0)
+            if cost is None:
+                cost = self.cost_D[neighbor].get(1)
+            self.rt_tbl_D[neighbor] = { self.name: cost }
+        self.rt_tbl_D[self.name] = { self.name: 0 }
         print('%s: Initialized routing table' % self)
         self.print_routes()
     
@@ -150,6 +156,14 @@ class Router:
     def print_routes(self):
         #TODO: print the routes as a two dimensional table
         print(self.rt_tbl_D)
+        print("===================================================================")
+        header = "| " + self.name + " | "
+        router = "| " + self.name + " | "
+        for entry in self.rt_tbl_D:
+            header += " " + entry + " | "
+            router += " " + str(self.rt_tbl_D[entry].get(self.name)) + "  | "
+        print(header)
+        print(router)
 
 
     ## called when printing the object
