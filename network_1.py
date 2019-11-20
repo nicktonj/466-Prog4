@@ -1,5 +1,6 @@
 import queue
 import threading
+import json
 
 
 ## wrapper class for a queue of packets
@@ -156,14 +157,18 @@ class Router:
     def print_routes(self):
         #TODO: print the routes as a two dimensional table
         print(self.rt_tbl_D)
-        print("===================================================================")
+        bars = "======"
         header = "| " + self.name + " | "
         router = "| " + self.name + " | "
         for entry in self.rt_tbl_D:
-            header += " " + entry + " | "
-            router += " " + str(self.rt_tbl_D[entry].get(self.name)) + "  | "
+            bars += "====="
+            header += entry + " | "
+            router += " " + str(self.rt_tbl_D[entry].get(self.name)) + " | "
+        print(bars)
         print(header)
+        print(bars)
         print(router)
+        print(bars)
 
 
     ## called when printing the object
@@ -210,7 +215,7 @@ class Router:
     def send_routes(self, i):
         # TODO: Send out a routing table update
         #create a routing table update packet
-        p = NetworkPacket(0, 'control', 'DUMMY_ROUTING_TABLE')
+        p = NetworkPacket(0, 'control', json.dumps(self.rt_tbl_D))
         try:
             print('%s: sending routing update "%s" from interface %d' % (self, p, i))
             self.intf_L[i].put(p.to_byte_S(), 'out', True)
@@ -224,7 +229,9 @@ class Router:
     def update_routes(self, p, i):
         #TODO: add logic to update the routing tables and
         # possibly send out routing updates
-        print('%s: Received routing update %s from interface %d' % (self, p, i))
+        print('%s: Received routing update "%s" from interface %d' % (self, p, i))
+        rcv_tbl_D = json.loads(p.data_S)
+        print(rcv_tbl_D)
 
                 
     ## thread target for the host to keep forwarding data
