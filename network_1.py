@@ -141,7 +141,7 @@ class Router:
         self.intf_L = [Interface(max_queue_size) for _ in range(len(cost_D))]
         #save neighbors and interfeces on which we connect to them
         self.cost_D = cost_D    # {neighbor: {interface: cost}}
-        #TODO: set up the routing table for connected hosts
+        #TODO: (Done) set up the routing table for connected hosts
         self.rt_tbl_D = {}      # {destination: {router: cost}}
         for neighbor in self.cost_D:
             cost = self.cost_D[neighbor].get(0)
@@ -155,23 +155,34 @@ class Router:
         
     ## Print routing table
     def print_routes(self):
-        #TODO: print the routes as a two dimensional table
+        #TODO: (Done) print the routes as a two dimensional table
         print(self.rt_tbl_D)
         bars = "======"
+        dividers = "------"
         header = "| " + self.name + " | "
         routers = {}
+        empty_tile = " ~ | "
+        columns = 0
         for entry in self.rt_tbl_D:
             bars += "====="
+            dividers += "-----"
             header += entry + " | "
             for router in self.rt_tbl_D[entry]:
                 if router not in routers:
                     routers[router] = "| " + router + " | "
+                    for i in range(columns):
+                        routers[router] += empty_tile
                 routers[router] += " " + str(self.rt_tbl_D[entry].get(router)) + " | "
+            columns += 1
         print(bars)
         print(header)
         print(bars)
+        num_routers = 0
         for router in routers:
             print(routers[router])
+            if num_routers < len(routers) - 1:
+                print(dividers)
+            num_routers += 1
         print(bars)
 
 
