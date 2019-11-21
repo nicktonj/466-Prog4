@@ -159,15 +159,19 @@ class Router:
         print(self.rt_tbl_D)
         bars = "======"
         header = "| " + self.name + " | "
-        router = "| " + self.name + " | "
+        routers = {}
         for entry in self.rt_tbl_D:
             bars += "====="
             header += entry + " | "
-            router += " " + str(self.rt_tbl_D[entry].get(self.name)) + " | "
+            for router in self.rt_tbl_D[entry]:
+                if router not in routers:
+                    routers[router] = "| " + router + " | "
+                routers[router] += " " + str(self.rt_tbl_D[entry].get(router)) + " | "
         print(bars)
         print(header)
         print(bars)
-        print(router)
+        for router in routers:
+            print(routers[router])
         print(bars)
 
 
@@ -231,7 +235,12 @@ class Router:
         # possibly send out routing updates
         print('%s: Received routing update "%s" from interface %d' % (self, p, i))
         rcv_tbl_D = json.loads(p.data_S)
-        print(rcv_tbl_D)
+        for entry in rcv_tbl_D:
+            if entry in self.rt_tbl_D:
+                for router in rcv_tbl_D[entry]:
+                    if router != self.name:
+                        self.rt_tbl_D[entry][router] = rcv_tbl_D[entry][router]
+        self.print_routes()
 
                 
     ## thread target for the host to keep forwarding data
