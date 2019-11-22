@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo Running test...
+echo
+
+python3 simulation_1.py
+
+echo
+echo Test complete.
+

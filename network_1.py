@@ -251,6 +251,14 @@ class Router:
                 for router in rcv_tbl_D[entry]:
                     if router != self.name:
                         self.rt_tbl_D[entry][router] = rcv_tbl_D[entry][router]
+            else:
+                self.rt_tbl_D[entry] = rcv_tbl_D[entry]
+                cost = 0
+                for router in rcv_tbl_D[entry]:
+                    if router in self.rt_tbl_D:
+                        cost = self.rt_tbl_D[router][self.name] + rcv_tbl_D[entry][router]
+                        break
+                self.rt_tbl_D[entry][self.name] = cost
         self.print_routes()
 
                 
