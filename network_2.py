@@ -220,9 +220,33 @@ class Router:
             # TODO: Here you will need to implement a lookup into the 
             # forwarding table to find the appropriate outgoing interface
             # for now we assume the outgoing interface is 1
-            self.intf_L[1].put(p.to_byte_S(), 'out', True)
-            print('%s: forwarding packet "%s" from interface %d to %d' % \
-                (self, p, i, 1))
+            chosen_neighbor = ''
+            print('Dst:', p.dst)
+            if p.dst in self.cost_D:
+                print('Sending directly to', p.dst)
+                chosen_neighbor = p.dst
+            else:
+                print('Available routes:', self.rt_tbl_D[p.dst])
+                best_cost = 100
+                best_router = ''
+                for router in self.rt_tbl_D[p.dst]:
+                    if router != self.name and router in self.cost_D and self.rt_tbl_D[p.dst][router] < best_cost:
+                        best_cost = self.rt_tbl_D[p.dst][router]
+                        best_router = router
+                print('Chose router %s with a cost of %d' %(best_router, best_cost))
+                chosen_neighbor = best_router
+            print('chosen_neighbor:', self.cost_D[chosen_neighbor])
+            chosen_interface = 42
+            for k, _ in self.cost_D[chosen_neighbor].items():
+                chosen_interface = k
+                break
+            print('chosen_interface:', chosen_interface)
+            if chosen_interface == 42:
+                print('%s: somehow, there are no interfaces available, dropping packet %s' %(self, p))
+            else:
+                self.intf_L[chosen_interface].put(p.to_byte_S(), 'out', True)
+                print('%s: forwarding packet "%s" from interface %d to %d' % \
+                    (self, p, i, chosen_interface))
         except queue.Full:
             print('%s: packet "%s" lost on interface %d' % (self, p, i))
             pass
@@ -231,7 +255,7 @@ class Router:
     ## send out route update
     # @param i Interface number on which to send out a routing update
     def send_routes(self, i):
-        # TODO: Send out a routing table update
+        # TODO: (Done) Send out a routing table update
         #create a routing table update packet
         p = NetworkPacket(0, 'control', json.dumps(self.rt_tbl_D))
         try:
@@ -245,7 +269,7 @@ class Router:
     ## forward the packet according to the routing table
     #  @param p Packet containing routing information
     def update_routes(self, p, i):
-        #TODO: add logic to update the routing tables and
+        #TODO: (Done...I hope) add logic to update the routing tables and
         # possibly send out routing updates
         print('%s: Received routing update "%s" from interface %d' % (self, p, i))
         rcv_tbl_D = json.loads(p.data_S) # decode the routing update into a dictionary
