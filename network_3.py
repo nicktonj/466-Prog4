@@ -272,17 +272,25 @@ class Router:
         # possibly send out routing updates
         print('%s: Received routing update "%s" from interface %d' % (self, p, i))
         rcv_tbl_D = json.loads(p.data_S) # decode the routing update into a dictionary
-        
+        routers = []
         for neighbor in rcv_tbl_D:
             if neighbor not in self.rt_tbl_D:
                 self.rt_tbl_D[neighbor] = {}
-                best_cost = 100
-                best_router = ''
-                for router in rcv_tbl_D[neighbor]:
+            best_cost = 100
+            best_router = ''
+            for router in rcv_tbl_D[neighbor]:
+                if router not in routers:
+                    routers.append(router)
+                self.rt_tbl_D[neighbor][router] = rcv_tbl_D[neighbor][router]
+                if neighbor != self.name:
                     if router in self.cost_D and rcv_tbl_D[neighbor][router] < best_cost:
                         best_cost = rcv_tbl_D[neighbor][router]
                         best_router = router
-                self.rt_tbl_D[neighbor][self.name] = self.rt_tbl_D[best_router][self.name] + best_cost
+                    self.rt_tbl_D[neighbor][self.name] = self.rt_tbl_D[best_router][self.name] + best_cost
+        for neighbor in self.rt_tbl_D:
+            if neighbor not in rcv_tbl_D:
+                for router in routers:
+                    self.rt_tbl_D[neighbor][router] = self.rt_tbl_D[router][self.name] + self.rt_tbl_D[neighbor][self.name]
 
         self.print_routes()
 
