@@ -145,10 +145,9 @@ class Router:
         #TODO: (Done) set up the routing table for connected hosts
         self.rt_tbl_D = {}      # {destination: {router: cost}}
         for neighbor in self.cost_D:
-            cost = self.cost_D[neighbor].get(0)
-            if cost is None:
-                cost = self.cost_D[neighbor].get(1)
-            self.rt_tbl_D[neighbor] = { self.name: cost }
+            for interface, cost in self.cost_D[neighbor].items():
+                self.rt_tbl_D[neighbor] = { self.name: cost }
+                break
         self.rt_tbl_D[self.name] = { self.name: 0 }
         print('%s: Initialized routing table' % self)
         self.print_routes()

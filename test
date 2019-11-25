@@ -4,7 +4,8 @@ echo Running test...
 echo
 
 # python3 simulation_1.py
-python3 simulation_2.py
+# python3 simulation_2.py
+python3 simulation_3.py
 
 echo
 echo Test complete.
