@@ -164,6 +164,7 @@ class Router:
         routers = {}
         empty_tile = " ~ | "
         columns = 0
+        the_whole_table = ''
         for entry in self.rt_tbl_D:
             bars += "====="
             dividers += "-----"
@@ -175,16 +176,17 @@ class Router:
                         routers[router] += empty_tile
                 routers[router] += " " + str(self.rt_tbl_D[entry].get(router)) + " | "
             columns += 1
-        print(bars)
-        print(header)
-        print(bars)
+        the_whole_table += bars + '\n'
+        the_whole_table += header + '\n'
+        the_whole_table += bars + '\n'
         num_routers = 0
         for router in routers:
-            print(routers[router])
+            the_whole_table += routers[router] + '\n'
             if num_routers < len(routers) - 1:
-                print(dividers)
+                the_whole_table += dividers + '\n'
             num_routers += 1
-        print(bars)
+        the_whole_table += bars + '\n'
+        print(the_whole_table)
 
 
     ## called when printing the object
@@ -279,7 +281,13 @@ class Router:
                 send_back_update = True
         if send_back_update:
             self.send_routes(i)
-        
+ 
+        for _, v in self.cost_D.items():
+            for k, _ in v.items():
+                print(v, '-->', k)
+                if k != i:
+                    self.send_routes(k) # send update to all interfaces except the receiving interface
+       
         self.print_routes()
 
                 
