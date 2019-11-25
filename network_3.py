@@ -272,45 +272,18 @@ class Router:
         # possibly send out routing updates
         print('%s: Received routing update "%s" from interface %d' % (self, p, i))
         rcv_tbl_D = json.loads(p.data_S) # decode the routing update into a dictionary
-        routers = [self.name] # keep track of all the known routers in both tables
-        # Compare table in update to own table
-        for entry in rcv_tbl_D:
-            if entry[0] == 'R' and entry not in routers:
-                routers.append(entry)
-            if entry in self.rt_tbl_D:
-                # Update all the routers for the destination
-                for router in rcv_tbl_D[entry]:
-                    if router != self.name:
-                        self.rt_tbl_D[entry][router] = rcv_tbl_D[entry][router]
-            else:
-                # If destination doesn't exist in own table, create it
-                self.rt_tbl_D[entry] = rcv_tbl_D[entry]
-                cost = 0
-                for router in rcv_tbl_D[entry]:
-                    if router in self.rt_tbl_D:
-                        # Set cost to be the cost from the current router to the next router plus that router to the destination
-                        cost = self.rt_tbl_D[router][self.name] + rcv_tbl_D[entry][router]
-                        break
-                self.rt_tbl_D[entry][self.name] = cost
         
-        # Compare own table to table in update and send out update if anything is different
-        tbl_cpy_D = copy.deepcopy(self.rt_tbl_D)
-        send_back_update = False
-        for entry in tbl_cpy_D:
-            if entry not in rcv_tbl_D:
-                for router in routers:
-                    if router != self.name:
-                        self.rt_tbl_D[entry][router] = self.rt_tbl_D[entry][self.name] + self.rt_tbl_D[router][self.name]
-                send_back_update = True
-        if send_back_update:
-            self.send_routes(i)
- 
-        for _, v in self.cost_D.items():
-            for k, _ in v.items():
-                print(v, '-->', k)
-                if k != i:
-                    self.send_routes(k) # send update to all interfaces except the receiving interface
-       
+        for neighbor in rcv_tbl_D:
+            if neighbor not in self.rt_tbl_D:
+                self.rt_tbl_D[neighbor] = {}
+                best_cost = 100
+                best_router = ''
+                for router in rcv_tbl_D[neighbor]:
+                    if router in self.cost_D and rcv_tbl_D[neighbor][router] < best_cost:
+                        best_cost = rcv_tbl_D[neighbor][router]
+                        best_router = router
+                self.rt_tbl_D[neighbor][self.name] = self.rt_tbl_D[best_router][self.name] + best_cost
+
         self.print_routes()
 
                 
