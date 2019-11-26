@@ -142,7 +142,6 @@ class Router:
         self.intf_L = [Interface(max_queue_size) for _ in range(len(cost_D))]
         #save neighbors and interfeces on which we connect to them
         self.cost_D = cost_D    # {neighbor: {interface: cost}}
-        #TODO: (Done) set up the routing table for connected hosts
         self.rt_tbl_D = {}      # {destination: {router: cost}}
         for neighbor in self.cost_D:
             for interface, cost in self.cost_D[neighbor].items():
@@ -155,7 +154,6 @@ class Router:
         
     ## Print routing table
     def print_routes(self):
-        #TODO: (Done) print the routes as a two dimensional table
         print(self.rt_tbl_D)
         bars = "======"
         dividers = "------"
@@ -216,9 +214,6 @@ class Router:
     #  @param i Incoming interface number for packet p
     def forward_packet(self, p, i):
         try:
-            # TODO: Here you will need to implement a lookup into the 
-            # forwarding table to find the appropriate outgoing interface
-            # for now we assume the outgoing interface is 1
             chosen_neighbor = ''
             if p.dst in self.cost_D:
                 chosen_neighbor = p.dst
@@ -248,8 +243,6 @@ class Router:
     ## send out route update
     # @param i Interface number on which to send out a routing update
     def send_routes(self, i):
-        # TODO: (Done) Send out a routing table update
-        #create a routing table update packet
         p = NetworkPacket(0, 'control', json.dumps(self.rt_tbl_D))
         try:
             print('%s: sending routing update "%s" from interface %d' % (self, p, i))
@@ -271,35 +264,41 @@ class Router:
     ## forward the packet according to the routing table
     #  @param p Packet containing routing information
     def update_routes(self, p, i):
-        #TODO: (Done...I hope) add logic to update the routing tables and
-        # possibly send out routing updates
         print('%s: Received routing update "%s" from interface %d' % (self, p, i))
         rcv_tbl_D = json.loads(p.data_S) # decode the routing update into a dictionary
         old_tbl_D = copy.deepcopy(self.rt_tbl_D) # copy original routing table for later comparison
-        routers = []
+        routers = [] # Keep a list of routers for later table update
+
         for neighbor in rcv_tbl_D:
+            # Create an entry for a new neighbor
             if neighbor not in self.rt_tbl_D:
                 self.rt_tbl_D[neighbor] = {}
-            best_cost = 100
+            best_cost = 100 # high starting cost for comparison
             best_router = ''
             for router in rcv_tbl_D[neighbor]:
                 if router not in routers:
                     routers.append(router)
+                # If there's already an entry for this router, compare costs
                 if self.rt_tbl_D[neighbor].get(router) is not None:
                     if rcv_tbl_D[neighbor][router] < self.rt_tbl_D[neighbor][router]:
                         self.rt_tbl_D[neighbor][router] = rcv_tbl_D[neighbor][router]
                 else:
                     self.rt_tbl_D[neighbor][router] = rcv_tbl_D[neighbor][router]
+                    # If the neighbor isn't self and it's not directly connected to self, find the lowest cost to it
                     if neighbor != self.name and neighbor not in self.cost_D:
                         if router in self.cost_D and rcv_tbl_D[neighbor][router] < best_cost:
                             best_cost = rcv_tbl_D[neighbor][router]
                             best_router = router
             if best_router != '':
                 self.rt_tbl_D[neighbor][self.name] = self.rt_tbl_D[best_router][self.name] + best_cost
+
+        # Handle implicit update of neighbors not represented in the update packet data
         for neighbor in self.rt_tbl_D:
             if neighbor not in rcv_tbl_D:
                 for router in routers:
                     self.rt_tbl_D[neighbor][router] = self.rt_tbl_D[router][self.name] + self.rt_tbl_D[neighbor][self.name]
+
+        # If the routing table has changed at all, notify neighbors of the update
         if self.rt_tbl_D != old_tbl_D:
             self.notify_neighbors()
         else:
