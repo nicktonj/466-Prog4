@@ -265,6 +265,15 @@ class Router:
             pass
 
 
+    ## Send route update to all neighboring routers
+    def notify_neighbors(self):
+        for neighbor in self.cost_D:
+            if neighbor[0] == 'R':
+                for k, _ in self.cost_D[neighbor].items():
+                    self.send_routes(k)
+                    break
+
+
     ## forward the packet according to the routing table
     #  @param p Packet containing routing information
     def update_routes(self, p, i):
@@ -272,6 +281,7 @@ class Router:
         # possibly send out routing updates
         print('%s: Received routing update "%s" from interface %d' % (self, p, i))
         rcv_tbl_D = json.loads(p.data_S) # decode the routing update into a dictionary
+        old_tbl_D = copy.deepcopy(self.rt_tbl_D) # copy original routing table for later comparison
         routers = []
         for neighbor in rcv_tbl_D:
             if neighbor not in self.rt_tbl_D:
@@ -281,16 +291,37 @@ class Router:
             for router in rcv_tbl_D[neighbor]:
                 if router not in routers:
                     routers.append(router)
-                self.rt_tbl_D[neighbor][router] = rcv_tbl_D[neighbor][router]
-                if neighbor != self.name:
-                    if router in self.cost_D and rcv_tbl_D[neighbor][router] < best_cost:
-                        best_cost = rcv_tbl_D[neighbor][router]
-                        best_router = router
-                    self.rt_tbl_D[neighbor][self.name] = self.rt_tbl_D[best_router][self.name] + best_cost
+                if self.rt_tbl_D[neighbor].get(router) is not None:
+                    if rcv_tbl_D[neighbor][router] < self.rt_tbl_D[neighbor][router]:
+                        self.rt_tbl_D[neighbor][router] = rcv_tbl_D[neighbor][router]
+                else:
+                    self.rt_tbl_D[neighbor][router] = rcv_tbl_D[neighbor][router]
+                    if neighbor != self.name and neighbor not in self.cost_D:
+                        if router in self.cost_D and rcv_tbl_D[neighbor][router] < best_cost:
+                            best_cost = rcv_tbl_D[neighbor][router]
+                            best_router = router
+            if best_router != '':
+                self.rt_tbl_D[neighbor][self.name] = self.rt_tbl_D[best_router][self.name] + best_cost
         for neighbor in self.rt_tbl_D:
             if neighbor not in rcv_tbl_D:
                 for router in routers:
                     self.rt_tbl_D[neighbor][router] = self.rt_tbl_D[router][self.name] + self.rt_tbl_D[neighbor][self.name]
+        if self.rt_tbl_D != old_tbl_D:
+            self.notify_neighbors()
+        else:
+            for neighbor in self.rt_tbl_D:
+                if self.rt_tbl_D[neighbor] != old_tbl_D[neighbor]:
+                    self.notify_neighbors()
+                    break
+                else:
+                    break_out = False
+                    for r, c in self.rt_tbl_D[neighbor].items():
+                        if old_tbl_D[neighbor][r] != c:
+                            self.notify_neighbors()
+                            break_out = True
+                            break
+                    if break_out:
+                        break
 
         self.print_routes()
 
