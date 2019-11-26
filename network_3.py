@@ -220,26 +220,20 @@ class Router:
             # forwarding table to find the appropriate outgoing interface
             # for now we assume the outgoing interface is 1
             chosen_neighbor = ''
-            print('Dst:', p.dst)
             if p.dst in self.cost_D:
-                print('Sending directly to', p.dst)
                 chosen_neighbor = p.dst
             else:
-                print('Available routes:', self.rt_tbl_D[p.dst])
                 best_cost = 100
                 best_router = ''
                 for router in self.rt_tbl_D[p.dst]:
                     if router != self.name and router in self.cost_D and self.rt_tbl_D[p.dst][router] < best_cost:
                         best_cost = self.rt_tbl_D[p.dst][router]
                         best_router = router
-                print('Chose router %s with a cost of %d' %(best_router, best_cost))
                 chosen_neighbor = best_router
-            print('chosen_neighbor:', self.cost_D[chosen_neighbor])
             chosen_interface = 42
             for k, _ in self.cost_D[chosen_neighbor].items():
                 chosen_interface = k
                 break
-            print('chosen_interface:', chosen_interface)
             if chosen_interface == 42:
                 print('%s: somehow, there are no interfaces available, dropping packet %s' %(self, p))
             else:

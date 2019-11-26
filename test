@@ -3,8 +3,15 @@
 echo Running test...
 echo
 
-# python3 simulation_1.py
-# python3 simulation_2.py
+echo Running simulation_1
+python3 simulation_1.py
+
+echo
+echo Running simulation_2
+python3 simulation_2.py
+
+echo
+echo Running simulation_3
 python3 simulation_3.py
 
 echo
